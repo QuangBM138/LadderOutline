@@ -1,0 +1,18 @@
+{
+  "Name": "LadderOutline",
+  "Author": "ogahalo00",
+  "Version": "1.0.0",
+  "Description": "Outlines ladders in the mines for better visibility.",
+  "UniqueID": "ogahalo00.LadderOutline",
+  "EntryDll": "LadderOutline.dll",
+  "MinimumApiVersion": "3.18.6",
+  "UpdateKeys": [
+    33976
+  ],
+  "Dependencies": [
+    {
+      "UniqueID": "spacechase0.GenericModConfigMenu",
+      "IsRequired": false
+    }
+  ]
+}
