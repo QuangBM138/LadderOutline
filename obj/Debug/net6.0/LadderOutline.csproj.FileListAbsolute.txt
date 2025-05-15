@@ -1,0 +1,9 @@
+D:\game indi\0MOD\LadderOutline\bin\Debug\net6.0\LadderOutline.deps.json
+D:\game indi\0MOD\LadderOutline\bin\Debug\net6.0\LadderOutline.dll
+D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.csproj.AssemblyReference.cache
+D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.GeneratedMSBuildEditorConfig.editorconfig
+D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.AssemblyInfoInputs.cache
+D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.AssemblyInfo.cs
+D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.csproj.CoreCompileInputs.cache
+D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.sourcelink.json
+D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.dll

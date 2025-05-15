@@ -7,7 +7,8 @@
   "EntryDll": "LadderOutline.dll",
   "MinimumApiVersion": "3.18.6",
   "UpdateKeys": [
-    33976
+    "Nexus:33976",
+    "GitHub:QuangBM138/LadderOutline"
   ],
   "Dependencies": [
     {
