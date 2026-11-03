@@ -7,3 +7,11 @@ D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.AssemblyInfo.cs
 D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.csproj.CoreCompileInputs.cache
 D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.sourcelink.json
 D:\game indi\0MOD\LadderOutline\obj\Debug\net6.0\LadderOutline.dll
+D:\CODE-quangbm138\Mod_svd\LadderOutline\bin\Debug\net6.0\LadderOutline.deps.json
+D:\CODE-quangbm138\Mod_svd\LadderOutline\bin\Debug\net6.0\LadderOutline.dll
+D:\CODE-quangbm138\Mod_svd\LadderOutline\obj\Debug\net6.0\LadderOutline.csproj.AssemblyReference.cache
+D:\CODE-quangbm138\Mod_svd\LadderOutline\obj\Debug\net6.0\LadderOutline.GeneratedMSBuildEditorConfig.editorconfig
+D:\CODE-quangbm138\Mod_svd\LadderOutline\obj\Debug\net6.0\LadderOutline.AssemblyInfoInputs.cache
+D:\CODE-quangbm138\Mod_svd\LadderOutline\obj\Debug\net6.0\LadderOutline.AssemblyInfo.cs
+D:\CODE-quangbm138\Mod_svd\LadderOutline\obj\Debug\net6.0\LadderOutline.csproj.CoreCompileInputs.cache
+D:\CODE-quangbm138\Mod_svd\LadderOutline\obj\Debug\net6.0\LadderOutline.dll

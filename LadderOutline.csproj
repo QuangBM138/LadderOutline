@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>0.1.5</Version>
+    <Version>1.1.0</Version>
     <RootNamespace>ogahalo00.Stardew.LadderOutline</RootNamespace>
 
     <TargetFramework>net6.0</TargetFramework>

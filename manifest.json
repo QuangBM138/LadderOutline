@@ -1,8 +1,8 @@
 {
   "Name": "LadderOutline",
   "Author": "ogahalo00",
-  "Version": "1.0.0",
-  "Description": "Outlines ladders in the mines for better visibility.",
+  "Version": "1.1.0",
+  "Description": "Outlines ladders and shafts (holes) and displays directional pointers towards them in the mines.",
   "UniqueID": "ogahalo00.LadderOutline",
   "EntryDll": "LadderOutline.dll",
   "MinimumApiVersion": "3.18.6",

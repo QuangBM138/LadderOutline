@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Netcode;
 using StardewModdingAPI;
@@ -13,45 +13,99 @@ using System.Linq;
 
 namespace ogahalo00.Stardew.LadderOutline
 {
+    public enum MineExitType
+    {
+        Ladder,
+        Shaft
+    }
+
+    public sealed class MineExitInfo
+    {
+        public Vector2 Tile { get; }
+        public MineExitType Type { get; set; }
+        public Vector2 WorldPixel => Tile * Game1.tileSize;
+        public Vector2 WorldCenter => (Tile + new Vector2(0.5f, 0.5f)) * Game1.tileSize;
+
+        public MineExitInfo(Vector2 tile, MineExitType type)
+        {
+            Tile = tile;
+            Type = type;
+        }
+    }
+
+    internal sealed class PointerDrawInfo
+    {
+        public Vector2 Position { get; set; }
+        public Vector2 Direction { get; set; }
+        public float Rotation { get; set; }
+        public Color Color { get; set; }
+        public MineExitType Type { get; set; }
+        public float DistanceTiles { get; set; }
+    }
+
     public sealed class ModConfig
     {
-        public bool DebugMode { get; set; } = false;
+        // General
         public bool EnableMod { get; set; } = true;
+        public KeybindList ToggleKey { get; set; } = KeybindList.Parse("None");
+        public bool DebugMode { get; set; } = false;
+
+        // Outline Settings
+        public bool EnableOutline { get; set; } = true;
         public string OutlineColor { get; set; } = "Green";
-        public float OutlineOpacity { get; set; } = 0.5f;
-        public KeybindList ToggleKey { get; set; } = KeybindList.Parse("None"); // Sử dụng KeybindList thay vì SButton
+        public string ShaftOutlineColor { get; set; } = "Cyan";
+        public float OutlineOpacity { get; set; } = 0.6f;
+        public int OutlineThickness { get; set; } = 3;
+
+        // Pointer (Direction Indicator) Settings
+        public bool EnablePointer { get; set; } = true;
+        public string PointerStyle { get; set; } = "ScreenEdge"; // "ScreenEdge", "PlayerOrbit", "Both"
+        public bool ShowOffscreenOnly { get; set; } = true;
+        public bool ShowOnscreenMarker { get; set; } = true;
+        public bool ShowDistance { get; set; } = true;
+        public bool ShowTargetType { get; set; } = true;
+        public string LadderPointerColor { get; set; } = "Green";
+        public string ShaftPointerColor { get; set; } = "Cyan";
+        public float PointerScale { get; set; } = 4.0f;
+        public bool PulseAnimation { get; set; } = true;
     }
 
     internal sealed class ModEntry : Mod
     {
         private ModConfig Config = null!;
-        private readonly HashSet<Vector2> ladderPositions = new();
+        private readonly Dictionary<Vector2, MineExitInfo> mineExits = new();
         private readonly List<KeyValuePair<Point, bool>> ladderQueue = new();
         private bool skippedFirstTick = false;
         private Texture2D? pixelTexture;
         private bool hasCheckedInitialLadders = false;
 
+        private static readonly string[] AllowedColors =
+        {
+            "Green", "Cyan", "Yellow", "Red", "Blue", "Purple", "Orange", "White", "Pink"
+        };
+
+        private static readonly string[] AllowedPointerStyles =
+        {
+            "ScreenEdge", "PlayerOrbit", "Both"
+        };
+
         public override void Entry(IModHelper helper)
         {
             try
             {
-                // Đọc config
-                Config = helper.ReadConfig<ModConfig>();
-                if (Config == null)
-                {
-                    Monitor.Log("Failed to load config, using default values.", LogLevel.Error);
-                    Config = new ModConfig();
-                }
+                // Read configuration
+                Config = helper.ReadConfig<ModConfig>() ?? new ModConfig();
 
-                // Khởi tạo texture
+                // Initialize 1x1 white texture for drawing rectangle borders
                 InitializeTexture();
 
-                // Đăng ký sự kiện
+                // Register SMAPI events
                 helper.Events.GameLoop.GameLaunched += OnGameLaunched;
                 helper.Events.World.LocationListChanged += OnLocationListChanged;
                 helper.Events.GameLoop.OneSecondUpdateTicked += OnOneSecondUpdateTicked;
                 helper.Events.Player.Warped += OnPlayerWarped;
                 helper.Events.Display.RenderedWorld += OnRenderedWorld;
+                helper.Events.Display.RenderedHud += OnRenderedHud;
                 helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
                 helper.Events.Input.ButtonPressed += OnButtonPressed;
             }
@@ -63,7 +117,6 @@ namespace ogahalo00.Stardew.LadderOutline
 
         private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
         {
-            // Tích hợp Generic Mod Config Menu
             InitializeGenericModConfigMenu(Helper);
         }
 
@@ -85,53 +138,27 @@ namespace ogahalo00.Stardew.LadderOutline
         {
             try
             {
-                // Kiểm tra xem GMCM có được tải không
-                var gmcmModInfo = helper.ModRegistry.Get("spacechase0.GenericModConfigMenu");
-                if (gmcmModInfo == null)
-                {
-                    Monitor.Log("Generic Mod Config Menu mod not found in ModRegistry. Please ensure GMCM is installed. Configurations must be set manually in config.json.", LogLevel.Warn);
-                    return;
-                }
-
-                // Kiểm tra phiên bản GMCM
-                var gmcmVersion = gmcmModInfo.Manifest.Version.ToString();
-                Monitor.Log($"Found Generic Mod Config Menu version {gmcmVersion}. Attempting to access API.", LogLevel.Debug);
-                if (!gmcmModInfo.Manifest.Version.IsNewerThan("1.12.0"))
-                {
-                    Monitor.Log($"Generic Mod Config Menu version {gmcmVersion} may be outdated. Consider updating to version 1.14.1 or newer for compatibility.", LogLevel.Warn);
-                }
-
-                // Lấy API
                 var gmcmApi = helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
                 if (gmcmApi == null)
                 {
-                    Monitor.Log($"Failed to access Generic Mod Config Menu API for version {gmcmVersion}. Ensure GMCM is compatible with SMAPI 3.18.6.", LogLevel.Warn);
+                    Monitor.Log("Generic Mod Config Menu mod not found or API unavailable.", LogLevel.Debug);
                     return;
                 }
 
-                // Đăng ký menu cấu hình
-                RegisterModConfigMenu(gmcmApi);
-                Monitor.Log("Successfully registered Generic Mod Config Menu.", LogLevel.Debug);
+                gmcmApi.Register(
+                    mod: ModManifest,
+                    reset: ResetConfig,
+                    save: SaveConfig,
+                    titleScreenOnly: false
+                );
+
+                AddOptions(gmcmApi);
+                Monitor.Log("Successfully registered with Generic Mod Config Menu.", LogLevel.Debug);
             }
             catch (Exception ex)
             {
                 Monitor.Log($"Error initializing GMCM: {ex.Message}\n{ex.StackTrace}", LogLevel.Error);
             }
-        }
-
-        /// <summary>
-        /// Register the mod configuration menu using GMCM.
-        /// </summary>
-        private void RegisterModConfigMenu(IGenericModConfigMenuApi api)
-        {
-            api.Register(
-                mod: ModManifest,
-                reset: ResetConfig,
-                save: SaveConfig,
-                titleScreenOnly: false
-            );
-
-            AddOptions(api);
         }
 
         private void ResetConfig()
@@ -153,53 +180,178 @@ namespace ogahalo00.Stardew.LadderOutline
             }
         }
 
-        /// <summary>
-        /// Add all mod configuration options to the GMCM menu.
-        /// </summary>
         private void AddOptions(IGenericModConfigMenuApi api)
         {
+            // === General Settings ===
+            api.AddSectionTitle(ModManifest, () => Helper.Translation.Get("config.section.general"));
+
             api.AddBoolOption(
                 mod: ModManifest,
-                name: () => "Enable Mod",
-                tooltip: () => "Enable or disable the ladder outline feature.",
+                name: () => Helper.Translation.Get("config.enable-mod.name"),
+                tooltip: () => Helper.Translation.Get("config.enable-mod.tooltip"),
                 getValue: () => Config.EnableMod,
                 setValue: value => Config.EnableMod = value
             );
 
+            api.AddKeybindList(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.toggle-key.name"),
+                tooltip: () => Helper.Translation.Get("config.toggle-key.tooltip"),
+                getValue: () => Config.ToggleKey,
+                setValue: value => Config.ToggleKey = value
+            );
+
             api.AddBoolOption(
                 mod: ModManifest,
-                name: () => "Debug Mode",
-                tooltip: () => "Show debug messages for ladder detection.",
+                name: () => Helper.Translation.Get("config.debug-mode.name"),
+                tooltip: () => Helper.Translation.Get("config.debug-mode.tooltip"),
                 getValue: () => Config.DebugMode,
                 setValue: value => Config.DebugMode = value
             );
 
+            // === Outline Settings ===
+            api.AddSectionTitle(ModManifest, () => Helper.Translation.Get("config.section.outline"));
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.enable-outline.name"),
+                tooltip: () => Helper.Translation.Get("config.enable-outline.tooltip"),
+                getValue: () => Config.EnableOutline,
+                setValue: value => Config.EnableOutline = value
+            );
+
             api.AddTextOption(
                 mod: ModManifest,
-                name: () => "Outline Color",
-                tooltip: () => "Color of the ladder outline.",
+                name: () => Helper.Translation.Get("config.outline-color.name"),
+                tooltip: () => Helper.Translation.Get("config.outline-color.tooltip"),
                 getValue: () => Config.OutlineColor,
                 setValue: value => Config.OutlineColor = value,
-                allowedValues: new[] { "Red", "Blue", "Green", "Yellow", "White", "Purple", "Cyan", "Orange" }
+                allowedValues: AllowedColors,
+                formatAllowedValue: val => Helper.Translation.Get($"color.{val.ToLowerInvariant()}").Default(val)
+            );
+
+            api.AddTextOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.shaft-outline-color.name"),
+                tooltip: () => Helper.Translation.Get("config.shaft-outline-color.tooltip"),
+                getValue: () => Config.ShaftOutlineColor,
+                setValue: value => Config.ShaftOutlineColor = value,
+                allowedValues: AllowedColors,
+                formatAllowedValue: val => Helper.Translation.Get($"color.{val.ToLowerInvariant()}").Default(val)
             );
 
             api.AddNumberOption(
                 mod: ModManifest,
-                name: () => "Outline Opacity",
-                tooltip: () => "Opacity of the ladder outline (0.0 to 1.0).",
+                name: () => Helper.Translation.Get("config.outline-opacity.name"),
+                tooltip: () => Helper.Translation.Get("config.outline-opacity.tooltip"),
                 getValue: () => Config.OutlineOpacity,
                 setValue: value => Config.OutlineOpacity = value,
-                min: 0.0f,
+                min: 0.1f,
                 max: 1.0f,
                 interval: 0.1f
             );
 
-            api.AddKeybindList(
+            api.AddNumberOption(
                 mod: ModManifest,
-                name: () => "Toggle Mod Key",
-                tooltip: () => "Key to toggle the mod on or off. Set to 'None' to disable.",
-                getValue: () => Config.ToggleKey,
-                setValue: value => Config.ToggleKey = value
+                name: () => Helper.Translation.Get("config.outline-thickness.name"),
+                tooltip: () => Helper.Translation.Get("config.outline-thickness.tooltip"),
+                getValue: () => Config.OutlineThickness,
+                setValue: value => Config.OutlineThickness = value,
+                min: 1,
+                max: 6,
+                interval: 1
+            );
+
+            // === Direction Pointer Settings ===
+            api.AddSectionTitle(ModManifest, () => Helper.Translation.Get("config.section.pointer"));
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.enable-pointer.name"),
+                tooltip: () => Helper.Translation.Get("config.enable-pointer.tooltip"),
+                getValue: () => Config.EnablePointer,
+                setValue: value => Config.EnablePointer = value
+            );
+
+            api.AddTextOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.pointer-style.name"),
+                tooltip: () => Helper.Translation.Get("config.pointer-style.tooltip"),
+                getValue: () => Config.PointerStyle,
+                setValue: value => Config.PointerStyle = value,
+                allowedValues: AllowedPointerStyles,
+                formatAllowedValue: val => Helper.Translation.Get($"pointer-style.{val.ToLowerInvariant()}").Default(val)
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.show-offscreen-only.name"),
+                tooltip: () => Helper.Translation.Get("config.show-offscreen-only.tooltip"),
+                getValue: () => Config.ShowOffscreenOnly,
+                setValue: value => Config.ShowOffscreenOnly = value
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.show-onscreen-marker.name"),
+                tooltip: () => Helper.Translation.Get("config.show-onscreen-marker.tooltip"),
+                getValue: () => Config.ShowOnscreenMarker,
+                setValue: value => Config.ShowOnscreenMarker = value
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.show-distance.name"),
+                tooltip: () => Helper.Translation.Get("config.show-distance.tooltip"),
+                getValue: () => Config.ShowDistance,
+                setValue: value => Config.ShowDistance = value
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.show-target-type.name"),
+                tooltip: () => Helper.Translation.Get("config.show-target-type.tooltip"),
+                getValue: () => Config.ShowTargetType,
+                setValue: value => Config.ShowTargetType = value
+            );
+
+            api.AddTextOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.ladder-pointer-color.name"),
+                tooltip: () => Helper.Translation.Get("config.ladder-pointer-color.tooltip"),
+                getValue: () => Config.LadderPointerColor,
+                setValue: value => Config.LadderPointerColor = value,
+                allowedValues: AllowedColors,
+                formatAllowedValue: val => Helper.Translation.Get($"color.{val.ToLowerInvariant()}").Default(val)
+            );
+
+            api.AddTextOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.shaft-pointer-color.name"),
+                tooltip: () => Helper.Translation.Get("config.shaft-pointer-color.tooltip"),
+                getValue: () => Config.ShaftPointerColor,
+                setValue: value => Config.ShaftPointerColor = value,
+                allowedValues: AllowedColors,
+                formatAllowedValue: val => Helper.Translation.Get($"color.{val.ToLowerInvariant()}").Default(val)
+            );
+
+            api.AddNumberOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.pointer-scale.name"),
+                tooltip: () => Helper.Translation.Get("config.pointer-scale.tooltip"),
+                getValue: () => Config.PointerScale,
+                setValue: value => Config.PointerScale = value,
+                min: 2.0f,
+                max: 8.0f,
+                interval: 0.5f
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.pulse-animation.name"),
+                tooltip: () => Helper.Translation.Get("config.pulse-animation.tooltip"),
+                getValue: () => Config.PulseAnimation,
+                setValue: value => Config.PulseAnimation = value
             );
         }
 
@@ -213,7 +365,12 @@ namespace ogahalo00.Stardew.LadderOutline
                 {
                     Config.EnableMod = !Config.EnableMod;
                     Helper.WriteConfig(Config);
-                    Game1.addHUDMessage(new HUDMessage($"Ladder Outline {(Config.EnableMod ? "enabled" : "disabled")}.", HUDMessage.newQuest_type));
+
+                    string statusMsg = Config.EnableMod
+                        ? Helper.Translation.Get("hud.toggled-enabled").ToString()
+                        : Helper.Translation.Get("hud.toggled-disabled").ToString();
+
+                    Game1.addHUDMessage(new HUDMessage(statusMsg, HUDMessage.newQuest_type));
                     Monitor.Log($"Mod toggled to {(Config.EnableMod ? "enabled" : "disabled")} via key {Config.ToggleKey}.", LogLevel.Debug);
                 }
             }
@@ -232,7 +389,7 @@ namespace ogahalo00.Stardew.LadderOutline
                 if (ladderQueue.Count > 0 && skippedFirstTick)
                 {
                     var ladder = ladderQueue[0];
-                    Monitor.Log($"Processing delayed ladder at {ladder.Key}.", LogLevel.Trace);
+                    Monitor.Log($"Processing delayed exit at {ladder.Key} (shaft: {ladder.Value}).", LogLevel.Trace);
                     OnLadderLocationAdded(ladder.Key, ladder.Value);
                     ladderQueue.RemoveAt(0);
                 }
@@ -258,8 +415,6 @@ namespace ogahalo00.Stardew.LadderOutline
                     Monitor.Log($"Location added: Mine level {shaft.mineLevel}.", LogLevel.Trace);
                     skippedFirstTick = false;
                     FindLadders(shaft);
-
-                    // Xử lý ladder động
                     RegisterDynamicLadders(shaft);
                 }
             }
@@ -273,13 +428,13 @@ namespace ogahalo00.Stardew.LadderOutline
         {
             try
             {
-                // Ladder được tạo tự động
+                // Dynamic ladder/shaft generated by game (break rock, monster death)
                 var generatedLadders = Helper.Reflection.GetField<NetPointDictionary<bool, NetBool>>(shaft, "createLadderDownEvent", false)?.GetValue();
                 if (generatedLadders != null)
                 {
+                    generatedLadders.OnValueAdded -= OnLadderLocationAdded;
                     generatedLadders.OnValueAdded += OnLadderLocationAdded;
-                    int count = generatedLadders.Count();
-                    Monitor.Log($"Found {count} dynamic ladders in level {shaft.mineLevel}.", LogLevel.Trace);
+
                     foreach (var ladder in generatedLadders.Pairs)
                     {
                         if (!ladderQueue.Any(kv => kv.Key == ladder.Key))
@@ -287,11 +442,12 @@ namespace ogahalo00.Stardew.LadderOutline
                     }
                 }
 
-                // Ladder do người chơi đặt
+                // Ladder placed by player (staircase item)
                 var placedLadders = Helper.Reflection.GetField<NetVector2Dictionary<bool, NetBool>>(shaft, "createLadderAtEvent", false)?.GetValue();
                 if (placedLadders != null)
                 {
-                    placedLadders.OnValueAdded += OnLadderLocationAdded;
+                    placedLadders.OnValueAdded -= OnLadderPlaced;
+                    placedLadders.OnValueAdded += OnLadderPlaced;
                 }
             }
             catch (Exception ex)
@@ -307,13 +463,14 @@ namespace ogahalo00.Stardew.LadderOutline
             try
             {
                 ladderQueue.Clear();
-                ladderPositions.Clear();
+                mineExits.Clear();
                 hasCheckedInitialLadders = false;
 
                 if (e.NewLocation is MineShaft shaft)
                 {
-                    Monitor.Log($"Warped to mine level {shaft.mineLevel}, finding ladders.", LogLevel.Trace);
+                    Monitor.Log($"Warped to mine level {shaft.mineLevel}, finding ladders and shafts.", LogLevel.Trace);
                     FindLadders(shaft);
+                    RegisterDynamicLadders(shaft);
                 }
             }
             catch (Exception ex)
@@ -328,11 +485,19 @@ namespace ogahalo00.Stardew.LadderOutline
 
             try
             {
-                if (!hasCheckedInitialLadders && e.IsMultipleOf(30) && Game1.currentLocation is MineShaft shaft)
+                if (Game1.currentLocation is MineShaft shaft)
                 {
-                    Monitor.Log($"Checking ladders after warp in level {shaft.mineLevel}.", LogLevel.Trace);
-                    FindLadders(shaft);
-                    hasCheckedInitialLadders = true;
+                    // Check shortly after warp
+                    if (!hasCheckedInitialLadders && e.IsMultipleOf(30))
+                    {
+                        FindLadders(shaft);
+                        hasCheckedInitialLadders = true;
+                    }
+                    // Periodic check once per second (60 ticks) to catch any silent spawns
+                    else if (e.IsMultipleOf(60))
+                    {
+                        FindLadders(shaft);
+                    }
                 }
             }
             catch (Exception ex)
@@ -348,6 +513,8 @@ namespace ogahalo00.Stardew.LadderOutline
             try
             {
                 int ladderCount = 0;
+                int shaftCount = 0;
+
                 foreach (var layer in shaft.map.Layers)
                 {
                     if (layer?.Tiles == null) continue;
@@ -357,21 +524,45 @@ namespace ogahalo00.Stardew.LadderOutline
                         for (int y = 0; y < layer.LayerHeight; y++)
                         {
                             var tile = layer.Tiles[x, y];
-                            if (tile?.TileIndex == 173)
+                            if (tile == null) continue;
+
+                            // 173 = Ladder down, 174 = Shaft / jumping hole
+                            if (tile.TileIndex == 173)
                             {
-                                var position = new Vector2(x * Game1.tileSize, y * Game1.tileSize);
-                                if (ladderPositions.Add(position))
+                                var tilePos = new Vector2(x, y);
+                                if (!mineExits.TryGetValue(tilePos, out var existing) || existing.Type != MineExitType.Ladder)
                                 {
+                                    mineExits[tilePos] = new MineExitInfo(tilePos, MineExitType.Ladder);
                                     ladderCount++;
-                                    Monitor.Log($"Ladder found at {position} (Tile {x},{y}) on layer {layer.Id}.", LogLevel.Trace);
                                     if (Config.DebugMode)
-                                        Game1.addHUDMessage(new HUDMessage($"Ladder at {x},{y} ({layer.Id})", HUDMessage.newQuest_type));
+                                    {
+                                        string msg = Helper.Translation.Get("hud.debug.ladder-found", new { x, y }).ToString();
+                                        Game1.addHUDMessage(new HUDMessage(msg, HUDMessage.newQuest_type));
+                                    }
+                                }
+                            }
+                            else if (tile.TileIndex == 174)
+                            {
+                                var tilePos = new Vector2(x, y);
+                                if (!mineExits.TryGetValue(tilePos, out var existing) || existing.Type != MineExitType.Shaft)
+                                {
+                                    mineExits[tilePos] = new MineExitInfo(tilePos, MineExitType.Shaft);
+                                    shaftCount++;
+                                    if (Config.DebugMode)
+                                    {
+                                        string msg = Helper.Translation.Get("hud.debug.shaft-found", new { x, y }).ToString();
+                                        Game1.addHUDMessage(new HUDMessage(msg, HUDMessage.newQuest_type));
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                Monitor.Log($"Found {ladderCount} ladders in level {shaft.mineLevel}.", LogLevel.Trace);
+
+                if ((ladderCount > 0 || shaftCount > 0) && Config.DebugMode)
+                {
+                    Monitor.Log($"Found {ladderCount} ladders and {shaftCount} shafts in level {shaft.mineLevel}. Total tracked: {mineExits.Count}.", LogLevel.Debug);
+                }
             }
             catch (Exception ex)
             {
@@ -381,19 +572,21 @@ namespace ogahalo00.Stardew.LadderOutline
 
         private void OnLadderLocationAdded(Point point, bool shaft)
         {
-            OnLadderLocationAdded(new Vector2(point.X, point.Y), shaft);
-        }
-
-        private void OnLadderLocationAdded(Vector2 point, bool shaft)
-        {
             try
             {
-                var position = point * Game1.tileSize;
-                if (ladderPositions.Add(position))
+                var tilePos = new Vector2(point.X, point.Y);
+                var type = shaft ? MineExitType.Shaft : MineExitType.Ladder;
+                mineExits[tilePos] = new MineExitInfo(tilePos, type);
+
+                Monitor.Log($"Added dynamic exit: {(shaft ? "Shaft" : "Ladder")} at tile {point}.", LogLevel.Trace);
+                if (Config.DebugMode)
                 {
-                    Monitor.Log($"Added dynamic ladder at {position}.", LogLevel.Trace);
-                    if (Config.DebugMode)
-                        Game1.addHUDMessage(new HUDMessage($"Dynamic ladder at {point}!", HUDMessage.newQuest_type));
+                    string typeName = shaft
+                        ? Helper.Translation.Get("pointer.shaft").ToString()
+                        : Helper.Translation.Get("pointer.ladder").ToString();
+
+                    string msg = Helper.Translation.Get("hud.debug.new-exit", new { type = typeName, x = point.X, y = point.Y }).ToString();
+                    Game1.addHUDMessage(new HUDMessage(msg, HUDMessage.newQuest_type));
                 }
             }
             catch (Exception ex)
@@ -402,22 +595,160 @@ namespace ogahalo00.Stardew.LadderOutline
             }
         }
 
+        private void OnLadderPlaced(Vector2 point, bool shaft)
+        {
+            try
+            {
+                // Player placed staircase is always a ladder
+                mineExits[point] = new MineExitInfo(point, MineExitType.Ladder);
+                Monitor.Log($"Added placed ladder at tile {point}.", LogLevel.Trace);
+                if (Config.DebugMode)
+                {
+                    string msg = Helper.Translation.Get("hud.debug.placed-ladder", new { x = (int)point.X, y = (int)point.Y }).ToString();
+                    Game1.addHUDMessage(new HUDMessage(msg, HUDMessage.newQuest_type));
+                }
+            }
+            catch (Exception ex)
+            {
+                Monitor.Log($"Error in OnLadderPlaced: {ex.Message}\n{ex.StackTrace}", LogLevel.Error);
+            }
+        }
+
         private void OnRenderedWorld(object? sender, RenderedWorldEventArgs e)
         {
-            if (!Config.EnableMod || !Context.IsWorldReady || ladderPositions.Count == 0 || pixelTexture == null) return;
+            if (!Config.EnableMod || !Context.IsWorldReady || mineExits.Count == 0 || Game1.currentLocation is not MineShaft)
+                return;
 
             try
             {
-                Game1.InUIMode(() =>
+                // 1. Draw Outlines
+                if (Config.EnableOutline && pixelTexture != null)
                 {
-                    foreach (var position in ladderPositions)
+                    foreach (var exit in mineExits.Values)
                     {
-                        var rect = new Rectangle((int)position.X, (int)position.Y, Game1.tileSize, Game1.tileSize);
-                        rect.Offset(-Game1.viewport.X, -Game1.viewport.Y);
-                        var color = GetOutlineColor();
-                        DrawRectangle(rect, color);
+                        var rect = Game1.GlobalToLocal(
+                            Game1.viewport,
+                            new Rectangle((int)exit.WorldPixel.X, (int)exit.WorldPixel.Y, Game1.tileSize, Game1.tileSize)
+                        );
+
+                        // Culling
+                        if (rect.Right < 0 || rect.Bottom < 0 || rect.Left > Game1.viewport.Width || rect.Top > Game1.viewport.Height)
+                            continue;
+
+                        Color color = exit.Type == MineExitType.Ladder
+                            ? GetColor(Config.OutlineColor, Config.OutlineOpacity)
+                            : GetColor(Config.ShaftOutlineColor, Config.OutlineOpacity);
+
+                        DrawRectangle(e.SpriteBatch, rect, color, Config.OutlineThickness);
                     }
-                });
+                }
+
+                // 2. Draw On-Screen Floating Markers (bouncing arrow above ladder/hole when visible in world)
+                if (Config.EnablePointer && Config.ShowOnscreenMarker)
+                {
+                    float bob = Config.PulseAnimation
+                        ? (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 200.0) * 4f
+                        : 0f;
+
+                    Rectangle arrowSource = new Rectangle(412, 495, 5, 4);
+                    Vector2 arrowOrigin = new Vector2(2.5f, 2f);
+                    float downRotation = (float)Math.PI;
+
+                    foreach (var exit in mineExits.Values)
+                    {
+                        var centerScreen = Game1.GlobalToLocal(Game1.viewport, exit.WorldCenter);
+
+                        // Culling
+                        if (centerScreen.X < -64 || centerScreen.Y < -64 || centerScreen.X > Game1.viewport.Width + 64 || centerScreen.Y > Game1.viewport.Height + 64)
+                            continue;
+
+                        Vector2 markerPos = new Vector2(centerScreen.X, centerScreen.Y - 48f + bob);
+                        Color color = exit.Type == MineExitType.Ladder
+                            ? GetColor(Config.LadderPointerColor, 1.0f)
+                            : GetColor(Config.ShaftPointerColor, 1.0f);
+
+                        // Drop shadow
+                        e.SpriteBatch.Draw(
+                            Game1.mouseCursors,
+                            markerPos + new Vector2(2, 2),
+                            arrowSource,
+                            Color.Black * 0.75f,
+                            downRotation,
+                            arrowOrigin,
+                            Config.PointerScale,
+                            SpriteEffects.None,
+                            1f
+                        );
+
+                        // Tinted arrow
+                        e.SpriteBatch.Draw(
+                            Game1.mouseCursors,
+                            markerPos,
+                            arrowSource,
+                            color,
+                            downRotation,
+                            arrowOrigin,
+                            Config.PointerScale,
+                            SpriteEffects.None,
+                            1f
+                        );
+                    }
+                }
+
+                // 3. Draw Player Orbit Pointers (arrows around player pointing towards each ladder/shaft)
+                if (Config.EnablePointer && (Config.PointerStyle == "PlayerOrbit" || Config.PointerStyle == "Both") && Game1.player != null)
+                {
+                    Vector2 playerCenter = new Vector2(Game1.player.Position.X + 32f, Game1.player.Position.Y + 32f);
+                    Rectangle arrowSource = new Rectangle(412, 495, 5, 4);
+                    Vector2 arrowOrigin = new Vector2(2.5f, 2f);
+
+                    float pulse = Config.PulseAnimation
+                        ? (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250.0) * 4f
+                        : 0f;
+
+                    foreach (var exit in mineExits.Values)
+                    {
+                        Vector2 diff = exit.WorldCenter - playerCenter;
+                        if (diff == Vector2.Zero) continue;
+
+                        Vector2 dir = Vector2.Normalize(diff);
+                        float angle = (float)Math.Atan2(dir.Y, dir.X);
+                        float rotation = angle + (float)(Math.PI / 2.0);
+
+                        Vector2 orbitWorldPos = playerCenter + dir * (60f + pulse);
+                        Vector2 orbitScreenPos = Game1.GlobalToLocal(Game1.viewport, orbitWorldPos);
+
+                        Color color = exit.Type == MineExitType.Ladder
+                            ? GetColor(Config.LadderPointerColor, 1.0f)
+                            : GetColor(Config.ShaftPointerColor, 1.0f);
+
+                        // Shadow
+                        e.SpriteBatch.Draw(
+                            Game1.mouseCursors,
+                            orbitScreenPos + new Vector2(1, 1),
+                            arrowSource,
+                            Color.Black * 0.75f,
+                            rotation,
+                            arrowOrigin,
+                            Config.PointerScale,
+                            SpriteEffects.None,
+                            1f
+                        );
+
+                        // Arrow
+                        e.SpriteBatch.Draw(
+                            Game1.mouseCursors,
+                            orbitScreenPos,
+                            arrowSource,
+                            color,
+                            rotation,
+                            arrowOrigin,
+                            Config.PointerScale,
+                            SpriteEffects.None,
+                            1f
+                        );
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -425,41 +756,198 @@ namespace ogahalo00.Stardew.LadderOutline
             }
         }
 
-        private Color GetOutlineColor()
+        private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
         {
+            if (!Config.EnableMod || !Config.EnablePointer || !Context.IsWorldReady || mineExits.Count == 0 || Game1.currentLocation is not MineShaft || Game1.player == null)
+                return;
+
+            // Only draw screen-edge pointers if style is ScreenEdge or Both
+            if (Config.PointerStyle != "ScreenEdge" && Config.PointerStyle != "Both")
+                return;
+
             try
             {
-                float opacity = Math.Clamp(Config.OutlineOpacity, 0.0f, 1.0f);
-                return Config.OutlineColor.ToLower() switch
+                Vector2 playerCenter = new Vector2(Game1.player.Position.X + 32f, Game1.player.Position.Y + 32f);
+                Rectangle safeArea = Utility.getSafeArea();
+                Vector2 screenCenter = new Vector2(safeArea.Center.X, safeArea.Center.Y);
+
+                float margin = 48f;
+                float minX = safeArea.Left + margin;
+                float maxX = safeArea.Right - margin;
+                float minY = safeArea.Top + margin;
+                float maxY = safeArea.Bottom - margin;
+
+                var pointersToDraw = new List<PointerDrawInfo>();
+
+                foreach (var exit in mineExits.Values)
                 {
-                    "red" => Color.Red * opacity,
-                    "blue" => Color.Blue * opacity,
-                    "green" => Color.Green * opacity,
-                    "yellow" => Color.Yellow * opacity,
-                    "white" => Color.White * opacity,
-                    "purple" => Color.Purple * opacity,
-                    "cyan" => Color.Cyan * opacity,
-                    "orange" => Color.Orange * opacity,
-                    _ => Color.Red * opacity
-                };
+                    Vector2 diff = exit.WorldCenter - playerCenter;
+                    float distPixels = diff.Length();
+                    float distTiles = distPixels / (float)Game1.tileSize;
+
+                    bool isOnScreen = Utility.isOnScreen(exit.WorldCenter, Game1.tileSize);
+
+                    // If configured to only show offscreen pointers and this target is already on screen, skip
+                    if (isOnScreen && Config.ShowOffscreenOnly)
+                        continue;
+
+                    Vector2 dir = diff;
+                    if (dir != Vector2.Zero)
+                        dir.Normalize();
+                    else
+                        dir = new Vector2(0, -1);
+
+                    // Ray-box intersection from screen center to safe area edges
+                    float tX = dir.X > 0 ? (maxX - screenCenter.X) / dir.X : (dir.X < 0 ? (minX - screenCenter.X) / dir.X : float.MaxValue);
+                    float tY = dir.Y > 0 ? (maxY - screenCenter.Y) / dir.Y : (dir.Y < 0 ? (minY - screenCenter.Y) / dir.Y : float.MaxValue);
+                    float t = Math.Min(tX, tY);
+                    Vector2 pointerPos = screenCenter + dir * t;
+
+                    float angle = (float)Math.Atan2(dir.Y, dir.X);
+                    float spriteRotation = angle + (float)(Math.PI / 2.0);
+
+                    Color color = exit.Type == MineExitType.Ladder
+                        ? GetColor(Config.LadderPointerColor, 1.0f)
+                        : GetColor(Config.ShaftPointerColor, 1.0f);
+
+                    pointersToDraw.Add(new PointerDrawInfo
+                    {
+                        Position = pointerPos,
+                        Direction = dir,
+                        Rotation = spriteRotation,
+                        Color = color,
+                        Type = exit.Type,
+                        DistanceTiles = distTiles
+                    });
+                }
+
+                if (pointersToDraw.Count == 0) return;
+
+                // Adjust positions slightly to prevent overlap if multiple pointers are close
+                if (pointersToDraw.Count > 1)
+                {
+                    for (int i = 0; i < pointersToDraw.Count; i++)
+                    {
+                        for (int j = i + 1; j < pointersToDraw.Count; j++)
+                        {
+                            float dist = Vector2.Distance(pointersToDraw[i].Position, pointersToDraw[j].Position);
+                            if (dist < 42f)
+                            {
+                                Vector2 tangent = new Vector2(-pointersToDraw[j].Direction.Y, pointersToDraw[j].Direction.X);
+                                float offset = (42f - dist) / 2f + 2f;
+                                pointersToDraw[i].Position -= tangent * offset;
+                                pointersToDraw[j].Position += tangent * offset;
+                            }
+                        }
+                    }
+                }
+
+                float pulse = Config.PulseAnimation
+                    ? (float)Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 250.0) * 4f
+                    : 0f;
+
+                Rectangle arrowSource = new Rectangle(412, 495, 5, 4);
+                Vector2 arrowOrigin = new Vector2(2.5f, 2f);
+
+                foreach (var p in pointersToDraw)
+                {
+                    Vector2 drawPos = p.Position + p.Direction * pulse;
+                    drawPos = Utility.makeSafe(drawPos, new Vector2(32, 32));
+
+                    // Drop shadow for arrow
+                    e.SpriteBatch.Draw(
+                        Game1.mouseCursors,
+                        drawPos + new Vector2(2, 2),
+                        arrowSource,
+                        Color.Black * 0.7f,
+                        p.Rotation,
+                        arrowOrigin,
+                        Config.PointerScale,
+                        SpriteEffects.None,
+                        1f
+                    );
+
+                    // Tinted arrow
+                    e.SpriteBatch.Draw(
+                        Game1.mouseCursors,
+                        drawPos,
+                        arrowSource,
+                        p.Color,
+                        p.Rotation,
+                        arrowOrigin,
+                        Config.PointerScale,
+                        SpriteEffects.None,
+                        1f
+                    );
+
+                    // Draw text label & distance if enabled
+                    string label = "";
+                    if (Config.ShowTargetType)
+                    {
+                        label = p.Type == MineExitType.Ladder
+                            ? Helper.Translation.Get("pointer.ladder").ToString()
+                            : Helper.Translation.Get("pointer.shaft").ToString();
+                    }
+                    if (Config.ShowDistance)
+                    {
+                        string distStr = $"{(int)Math.Round(p.DistanceTiles)}m";
+                        label = string.IsNullOrEmpty(label) ? distStr : $"{label} {distStr}";
+                    }
+
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        SpriteFont font = Game1.smallFont;
+                        Vector2 textSize = font.MeasureString(label);
+
+                        // Position label inwards toward screen center
+                        Vector2 textPos = drawPos - p.Direction * (20f + textSize.Length() * 0.15f) - textSize / 2f;
+                        textPos = Utility.makeSafe(textPos, textSize);
+
+                        Utility.drawTextWithShadow(
+                            e.SpriteBatch,
+                            label,
+                            font,
+                            textPos,
+                            p.Color
+                        );
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Monitor.Log($"Error in GetOutlineColor: {ex.Message}\n{ex.StackTrace}", LogLevel.Error);
-                return Color.Red * 0.5f;
+                Monitor.Log($"Error in OnRenderedHud: {ex.Message}\n{ex.StackTrace}", LogLevel.Error);
             }
         }
 
-        private void DrawRectangle(Rectangle rect, Color color)
+        private static Color GetColor(string colorName, float opacity = 1.0f)
+        {
+            float alpha = Math.Clamp(opacity, 0.0f, 1.0f);
+            return colorName?.Trim().ToLowerInvariant() switch
+            {
+                "red" => Color.Red * alpha,
+                "blue" => Color.DodgerBlue * alpha,
+                "green" => Color.LimeGreen * alpha,
+                "yellow" => Color.Gold * alpha,
+                "white" => Color.White * alpha,
+                "purple" => Color.MediumPurple * alpha,
+                "cyan" => Color.Cyan * alpha,
+                "orange" => Color.Orange * alpha,
+                "pink" => Color.HotPink * alpha,
+                _ => Color.LimeGreen * alpha
+            };
+        }
+
+        private void DrawRectangle(SpriteBatch spriteBatch, Rectangle rect, Color color, int thickness = 3)
         {
             if (pixelTexture == null) return;
 
             try
             {
-                Game1.spriteBatch.Draw(pixelTexture, new Rectangle(rect.Left, rect.Top, rect.Width, 3), color);
-                Game1.spriteBatch.Draw(pixelTexture, new Rectangle(rect.Left, rect.Bottom - 3, rect.Width, 3), color);
-                Game1.spriteBatch.Draw(pixelTexture, new Rectangle(rect.Left, rect.Top, 3, rect.Height), color);
-                Game1.spriteBatch.Draw(pixelTexture, new Rectangle(rect.Right - 3, rect.Top, 3, rect.Height), color);
+                thickness = Math.Clamp(thickness, 1, 6);
+                spriteBatch.Draw(pixelTexture, new Rectangle(rect.Left, rect.Top, rect.Width, thickness), color);
+                spriteBatch.Draw(pixelTexture, new Rectangle(rect.Left, rect.Bottom - thickness, rect.Width, thickness), color);
+                spriteBatch.Draw(pixelTexture, new Rectangle(rect.Left, rect.Top, thickness, rect.Height), color);
+                spriteBatch.Draw(pixelTexture, new Rectangle(rect.Right - thickness, rect.Top, thickness, rect.Height), color);
             }
             catch (Exception ex)
             {

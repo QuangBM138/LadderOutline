@@ -1,0 +1,83 @@
+{
+  "pointer.ladder": "Ladder",
+  "pointer.shaft": "Hole",
+
+  "hud.toggled-enabled": "Ladder Outline & Pointer enabled.",
+  "hud.toggled-disabled": "Ladder Outline & Pointer disabled.",
+  "hud.debug.ladder-found": "Ladder at {{x}},{{y}}",
+  "hud.debug.shaft-found": "Shaft (hole) at {{x}},{{y}}!",
+  "hud.debug.new-exit": "New {{type}} at {{x}},{{y}}!",
+  "hud.debug.placed-ladder": "Placed Ladder at {{x}},{{y}}!",
+
+  "config.section.general": "General Settings",
+  "config.section.outline": "Outline Settings",
+  "config.section.pointer": "Direction Pointer Settings",
+
+  "config.enable-mod.name": "Enable Mod",
+  "config.enable-mod.tooltip": "Master switch to enable or disable LadderOutline features.",
+
+  "config.toggle-key.name": "Toggle Key",
+  "config.toggle-key.tooltip": "Key to quickly toggle the mod on or off. Set to 'None' to disable.",
+
+  "config.debug-mode.name": "Debug Mode",
+  "config.debug-mode.tooltip": "Show debug log messages and notifications when ladders or shafts are detected.",
+
+  "config.enable-outline.name": "Enable Outline",
+  "config.enable-outline.tooltip": "Draw visual outline borders around ladder and shaft tiles.",
+
+  "config.outline-color.name": "Ladder Outline Color",
+  "config.outline-color.tooltip": "Color of the outline around ladders.",
+
+  "config.shaft-outline-color.name": "Shaft (Hole) Outline Color",
+  "config.shaft-outline-color.tooltip": "Color of the outline around shafts (jumping holes in Skull Cavern).",
+
+  "config.outline-opacity.name": "Outline Opacity",
+  "config.outline-opacity.tooltip": "Opacity of the tile outlines (0.1 to 1.0).",
+
+  "config.outline-thickness.name": "Outline Thickness",
+  "config.outline-thickness.tooltip": "Thickness of the outline border in pixels (1 to 6).",
+
+  "config.enable-pointer.name": "Enable Pointer",
+  "config.enable-pointer.tooltip": "Show directional pointers pointing toward ladders and shafts (supports multiple targets).",
+
+  "config.pointer-style.name": "Pointer Style",
+  "config.pointer-style.tooltip": "Display style for pointers: ScreenEdge (at screen borders), PlayerOrbit (around farmer), or Both.",
+
+  "config.show-offscreen-only.name": "Show Off-screen Only",
+  "config.show-offscreen-only.tooltip": "Only show screen-edge pointers when the ladder or shaft is outside the visible screen.",
+
+  "config.show-onscreen-marker.name": "Show On-screen Marker",
+  "config.show-onscreen-marker.tooltip": "Show a floating arrow bouncing above ladders/shafts when they are visible on-screen.",
+
+  "config.show-distance.name": "Show Distance",
+  "config.show-distance.tooltip": "Display the distance in tiles/meters next to the pointer.",
+
+  "config.show-target-type.name": "Show Target Type",
+  "config.show-target-type.tooltip": "Display 'Ladder' or 'Hole' label next to the pointer.",
+
+  "config.ladder-pointer-color.name": "Ladder Pointer Color",
+  "config.ladder-pointer-color.tooltip": "Color of pointers pointing to ladders.",
+
+  "config.shaft-pointer-color.name": "Shaft (Hole) Pointer Color",
+  "config.shaft-pointer-color.tooltip": "Color of pointers pointing to shafts (holes).",
+
+  "config.pointer-scale.name": "Pointer Scale",
+  "config.pointer-scale.tooltip": "Scale size of the pointer arrow (2.0 to 8.0).",
+
+  "config.pulse-animation.name": "Pulse Animation",
+  "config.pulse-animation.tooltip": "Animate pointers with a smooth pulse/bobbing effect to make them easily noticeable.",
+
+  "pointer-style.screenedge": "Screen Edge",
+  "pointer-style.playerorbit": "Around Player",
+  "pointer-style.both": "Both",
+
+  "color.green": "Green",
+  "color.cyan": "Cyan",
+  "color.yellow": "Yellow",
+  "color.red": "Red",
+  "color.blue": "Blue",
+  "color.purple": "Purple",
+  "color.orange": "Orange",
+  "color.white": "White",
+  "color.pink": "Pink"
+}

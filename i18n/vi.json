@@ -1,0 +1,83 @@
+{
+  "pointer.ladder": "Cầu thang",
+  "pointer.shaft": "Hố nhảy",
+
+  "hud.toggled-enabled": "Ladder Outline & Con trỏ: Đã BẬT.",
+  "hud.toggled-disabled": "Ladder Outline & Con trỏ: Đã TẮT.",
+  "hud.debug.ladder-found": "Cầu thang tại {{x}},{{y}}",
+  "hud.debug.shaft-found": "Hố nhảy tại {{x}},{{y}}!",
+  "hud.debug.new-exit": "Phát hiện {{type}} mới tại {{x}},{{y}}!",
+  "hud.debug.placed-ladder": "Đã đặt cầu thang tại {{x}},{{y}}!",
+
+  "config.section.general": "Cài đặt chung",
+  "config.section.outline": "Cài đặt viền (Outline)",
+  "config.section.pointer": "Cài đặt con trỏ chỉ hướng",
+
+  "config.enable-mod.name": "Bật Mod",
+  "config.enable-mod.tooltip": "Công tắc chính để bật hoặc tắt các tính năng của LadderOutline.",
+
+  "config.toggle-key.name": "Phím bật/tắt nhanh",
+  "config.toggle-key.tooltip": "Phím để bật/tắt nhanh mod. Đặt là 'None' nếu không dùng.",
+
+  "config.debug-mode.name": "Chế độ Debug",
+  "config.debug-mode.tooltip": "Hiển thị thông báo khi phát hiện cầu thang hoặc hố.",
+
+  "config.enable-outline.name": "Bật viền ô",
+  "config.enable-outline.tooltip": "Vẽ đường viền nổi bật xung quanh ô cầu thang và hố nhảy.",
+
+  "config.outline-color.name": "Màu viền cầu thang",
+  "config.outline-color.tooltip": "Màu sắc của viền bao quanh cầu thang.",
+
+  "config.shaft-outline-color.name": "Màu viền hố nhảy",
+  "config.shaft-outline-color.tooltip": "Màu sắc của viền bao quanh hố nhảy (trong Skull Cavern).",
+
+  "config.outline-opacity.name": "Độ mờ của viền",
+  "config.outline-opacity.tooltip": "Độ trong suốt / độ mờ của đường viền (0.1 đến 1.0).",
+
+  "config.outline-thickness.name": "Độ dày viền",
+  "config.outline-thickness.tooltip": "Độ dày của nét viền theo pixel (1 đến 6).",
+
+  "config.enable-pointer.name": "Bật con trỏ chỉ hướng",
+  "config.enable-pointer.tooltip": "Hiển thị mũi tên chỉ hướng về phía cầu thang và hố (hỗ trợ nhiều mục tiêu cùng lúc).",
+
+  "config.pointer-style.name": "Kiểu con trỏ",
+  "config.pointer-style.tooltip": "Kiểu hiển thị con trỏ: ScreenEdge (mép màn hình), PlayerOrbit (quanh nhân vật), hoặc Both (cả hai).",
+
+  "config.show-offscreen-only.name": "Chỉ hiện khi ngoài màn hình",
+  "config.show-offscreen-only.tooltip": "Chỉ hiển thị con trỏ mép màn hình khi cầu thang/hố nằm ngoài tầm nhìn màn hình.",
+
+  "config.show-onscreen-marker.name": "Hiện dấu hiệu trên màn hình",
+  "config.show-onscreen-marker.tooltip": "Hiển thị mũi tên nhấp nhô phía trên cầu thang/hố khi đã lọt vào màn hình.",
+
+  "config.show-distance.name": "Hiển thị khoảng cách",
+  "config.show-distance.tooltip": "Hiển thị khoảng cách tính theo ô/mét bên cạnh con trỏ.",
+
+  "config.show-target-type.name": "Hiển thị loại mục tiêu",
+  "config.show-target-type.tooltip": "Hiển thị nhãn 'Cầu thang' hoặc 'Hố nhảy' bên cạnh con trỏ.",
+
+  "config.ladder-pointer-color.name": "Màu con trỏ cầu thang",
+  "config.ladder-pointer-color.tooltip": "Màu sắc của con trỏ chỉ về phía cầu thang.",
+
+  "config.shaft-pointer-color.name": "Màu con trỏ hố nhảy",
+  "config.shaft-pointer-color.tooltip": "Màu sắc của con trỏ chỉ về phía hố nhảy.",
+
+  "config.pointer-scale.name": "Kích thước con trỏ",
+  "config.pointer-scale.tooltip": "Độ lớn của mũi tên con trỏ (2.0 đến 8.0).",
+
+  "config.pulse-animation.name": "Hiệu ứng nhấp nhô",
+  "config.pulse-animation.tooltip": "Tạo hiệu ứng nhấp nhô / nhịp thở mượt mà để con trỏ dễ nhận biết.",
+
+  "pointer-style.screenedge": "Mép màn hình",
+  "pointer-style.playerorbit": "Quanh nhân vật",
+  "pointer-style.both": "Cả hai",
+
+  "color.green": "Xanh lá",
+  "color.cyan": "Xanh lơ",
+  "color.yellow": "Vàng",
+  "color.red": "Đỏ",
+  "color.blue": "Xanh dương",
+  "color.purple": "Tím",
+  "color.orange": "Cam",
+  "color.white": "Trắng",
+  "color.pink": "Hồng"
+}
