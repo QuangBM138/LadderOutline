@@ -1,8 +1,8 @@
 {
-  "Name": "LadderOutline",
+  "Name": "Ladder and Volcano Outline",
   "Author": "ogahalo00",
-  "Version": "1.1.0",
-  "Description": "Outlines ladders and shafts (holes) and displays directional pointers towards them in the mines.",
+  "Version": "1.2.0",
+  "Description": "Outlines ladders, shafts, and Ginger Island Volcano Dungeon exits, switches, and locked gates with directional arrow pointers towards them.",
   "UniqueID": "ogahalo00.LadderOutline",
   "EntryDll": "LadderOutline.dll",
   "MinimumApiVersion": "3.18.6",

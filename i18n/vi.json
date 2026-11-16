@@ -1,29 +1,36 @@
 {
   "pointer.ladder": "Cầu thang",
   "pointer.shaft": "Hố nhảy",
+  "pointer.volcano-exit": "Tầng kế",
+  "pointer.volcano-switch": "Nút mở cổng",
+  "pointer.volcano-gate": "Cổng khóa",
 
-  "hud.toggled-enabled": "Ladder Outline & Con trỏ: Đã BẬT.",
-  "hud.toggled-disabled": "Ladder Outline & Con trỏ: Đã TẮT.",
+  "hud.toggled-enabled": "Ladder & Volcano Outline: Đã BẬT.",
+  "hud.toggled-disabled": "Ladder & Volcano Outline: Đã TẮT.",
   "hud.debug.ladder-found": "Cầu thang tại {{x}},{{y}}",
   "hud.debug.shaft-found": "Hố nhảy tại {{x}},{{y}}!",
   "hud.debug.new-exit": "Phát hiện {{type}} mới tại {{x}},{{y}}!",
   "hud.debug.placed-ladder": "Đã đặt cầu thang tại {{x}},{{y}}!",
+  "hud.debug.volcano-exit-found": "Lối thoát Volcano tại {{x}},{{y}}",
+  "hud.debug.volcano-switch-found": "Nút mở cổng tại {{x}},{{y}}",
+  "hud.debug.volcano-gate-found": "Cổng lùn bị khóa tại {{x}},{{y}}",
 
   "config.section.general": "Cài đặt chung",
   "config.section.outline": "Cài đặt viền (Outline)",
   "config.section.pointer": "Cài đặt con trỏ chỉ hướng",
+  "config.section.volcano": "Cài đặt Hầm Núi Lửa (Đảo Gừng)",
 
   "config.enable-mod.name": "Bật Mod",
-  "config.enable-mod.tooltip": "Công tắc chính để bật hoặc tắt các tính năng của LadderOutline.",
+  "config.enable-mod.tooltip": "Công tắc chính để bật hoặc tắt các tính năng của mod.",
 
   "config.toggle-key.name": "Phím bật/tắt nhanh",
   "config.toggle-key.tooltip": "Phím để bật/tắt nhanh mod. Đặt là 'None' nếu không dùng.",
 
   "config.debug-mode.name": "Chế độ Debug",
-  "config.debug-mode.tooltip": "Hiển thị thông báo khi phát hiện cầu thang hoặc hố.",
+  "config.debug-mode.tooltip": "Hiển thị thông báo khi phát hiện cầu thang, hố hoặc cổng/nút.",
 
   "config.enable-outline.name": "Bật viền ô",
-  "config.enable-outline.tooltip": "Vẽ đường viền nổi bật xung quanh ô cầu thang và hố nhảy.",
+  "config.enable-outline.tooltip": "Vẽ đường viền nổi bật xung quanh các ô mục tiêu.",
 
   "config.outline-color.name": "Màu viền cầu thang",
   "config.outline-color.tooltip": "Màu sắc của viền bao quanh cầu thang.",
@@ -38,22 +45,22 @@
   "config.outline-thickness.tooltip": "Độ dày của nét viền theo pixel (1 đến 6).",
 
   "config.enable-pointer.name": "Bật con trỏ chỉ hướng",
-  "config.enable-pointer.tooltip": "Hiển thị mũi tên chỉ hướng về phía cầu thang và hố (hỗ trợ nhiều mục tiêu cùng lúc).",
+  "config.enable-pointer.tooltip": "Hiển thị mũi tên chỉ hướng về phía mục tiêu (hỗ trợ nhiều mục tiêu cùng lúc).",
 
   "config.pointer-style.name": "Kiểu con trỏ",
   "config.pointer-style.tooltip": "Kiểu hiển thị con trỏ: ScreenEdge (mép màn hình), PlayerOrbit (quanh nhân vật), hoặc Both (cả hai).",
 
   "config.show-offscreen-only.name": "Chỉ hiện khi ngoài màn hình",
-  "config.show-offscreen-only.tooltip": "Chỉ hiển thị con trỏ mép màn hình khi cầu thang/hố nằm ngoài tầm nhìn màn hình.",
+  "config.show-offscreen-only.tooltip": "Chỉ hiển thị con trỏ mép màn hình khi mục tiêu nằm ngoài tầm nhìn màn hình.",
 
   "config.show-onscreen-marker.name": "Hiện dấu hiệu trên màn hình",
-  "config.show-onscreen-marker.tooltip": "Hiển thị mũi tên nhấp nhô phía trên cầu thang/hố khi đã lọt vào màn hình.",
+  "config.show-onscreen-marker.tooltip": "Hiển thị mũi tên nhấp nhô phía trên mục tiêu khi đã lọt vào màn hình.",
 
   "config.show-distance.name": "Hiển thị khoảng cách",
   "config.show-distance.tooltip": "Hiển thị khoảng cách tính theo ô/mét bên cạnh con trỏ.",
 
   "config.show-target-type.name": "Hiển thị loại mục tiêu",
-  "config.show-target-type.tooltip": "Hiển thị nhãn 'Cầu thang' hoặc 'Hố nhảy' bên cạnh con trỏ.",
+  "config.show-target-type.tooltip": "Hiển thị nhãn (ví dụ 'Cầu thang', 'Tầng kế', 'Nút mở cổng', 'Cổng khóa') bên cạnh con trỏ.",
 
   "config.ladder-pointer-color.name": "Màu con trỏ cầu thang",
   "config.ladder-pointer-color.tooltip": "Màu sắc của con trỏ chỉ về phía cầu thang.",
@@ -66,6 +73,30 @@
 
   "config.pulse-animation.name": "Hiệu ứng nhấp nhô",
   "config.pulse-animation.tooltip": "Tạo hiệu ứng nhấp nhô / nhịp thở mượt mà để con trỏ dễ nhận biết.",
+
+  "config.volcano-enable.name": "Bật hỗ trợ Núi Lửa",
+  "config.volcano-enable.tooltip": "Bật con trỏ chỉ hướng và viền ô trong Hầm Núi Lửa ở Đảo Gừng (Volcano Dungeon).",
+
+  "config.volcano-show-exit.name": "Hiện cửa/hang lên tầng kế",
+  "config.volcano-show-exit.tooltip": "Hiển thị mũi tên và viền dẫn đến hang / cầu thang đi tiếp lên tầng tiếp theo.",
+
+  "config.volcano-show-switches.name": "Hiện nút bấm mở cổng",
+  "config.volcano-show-switches.tooltip": "Hiển thị mũi tên và viền dẫn đến các nút bấm dưới sàn cần đạp lên để mở cổng lùn.",
+
+  "config.volcano-show-gates.name": "Hiện cánh cổng bị khóa",
+  "config.volcano-show-gates.tooltip": "Hiển thị mũi tên và viền chỉ cánh cổng lùn đang bị khóa chắn đường.",
+
+  "config.volcano-hide-opened.name": "Ẩn nút đã bấm & cổng đã mở",
+  "config.volcano-hide-opened.tooltip": "Tự động ẩn các nút đã bấm và cánh cổng đã mở để màn hình gọn gàng, không bị rối mắt.",
+
+  "config.volcano-exit-color.name": "Màu chỉ lối lên tầng kế",
+  "config.volcano-exit-color.tooltip": "Màu sắc của mũi tên và viền chỉ cửa lên tầng tiếp theo.",
+
+  "config.volcano-switch-color.name": "Màu chỉ nút mở cổng",
+  "config.volcano-switch-color.tooltip": "Màu sắc của mũi tên và viền chỉ các nút bấm mở cổng dưới sàn.",
+
+  "config.volcano-gate-color.name": "Màu chỉ cổng khóa",
+  "config.volcano-gate-color.tooltip": "Màu sắc của mũi tên và viền chỉ cánh cổng lùn bị khóa.",
 
   "pointer-style.screenedge": "Mép màn hình",
   "pointer-style.playerorbit": "Quanh nhân vật",

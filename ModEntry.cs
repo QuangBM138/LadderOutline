@@ -16,20 +16,30 @@ namespace ogahalo00.Stardew.LadderOutline
     public enum MineExitType
     {
         Ladder,
-        Shaft
+        Shaft,
+        VolcanoExit,
+        VolcanoSwitch,
+        VolcanoGate
     }
 
     public sealed class MineExitInfo
     {
         public Vector2 Tile { get; }
         public MineExitType Type { get; set; }
-        public Vector2 WorldPixel => Tile * Game1.tileSize;
-        public Vector2 WorldCenter => (Tile + new Vector2(0.5f, 0.5f)) * Game1.tileSize;
+        public string? ExtraLabel { get; set; }
+        public int TileWidth { get; set; } = 1;
+        public int TileHeight { get; set; } = 1;
 
-        public MineExitInfo(Vector2 tile, MineExitType type)
+        public Vector2 WorldPixel => Tile * Game1.tileSize;
+        public Vector2 WorldCenter => (Tile + new Vector2(TileWidth * 0.5f, TileHeight * 0.5f)) * Game1.tileSize;
+
+        public MineExitInfo(Vector2 tile, MineExitType type, string? extraLabel = null, int tileWidth = 1, int tileHeight = 1)
         {
             Tile = tile;
             Type = type;
+            ExtraLabel = extraLabel;
+            TileWidth = tileWidth;
+            TileHeight = tileHeight;
         }
     }
 
@@ -40,6 +50,7 @@ namespace ogahalo00.Stardew.LadderOutline
         public float Rotation { get; set; }
         public Color Color { get; set; }
         public MineExitType Type { get; set; }
+        public string? ExtraLabel { get; set; }
         public float DistanceTiles { get; set; }
     }
 
@@ -68,12 +79,22 @@ namespace ogahalo00.Stardew.LadderOutline
         public string ShaftPointerColor { get; set; } = "Cyan";
         public float PointerScale { get; set; } = 4.0f;
         public bool PulseAnimation { get; set; } = true;
+
+        // Volcano Dungeon Settings
+        public bool EnableVolcano { get; set; } = true;
+        public bool ShowVolcanoExit { get; set; } = true;
+        public bool ShowVolcanoSwitches { get; set; } = true;
+        public bool ShowVolcanoGates { get; set; } = true;
+        public bool HideOpenedSwitchesAndGates { get; set; } = true;
+        public string VolcanoExitColor { get; set; } = "Green";
+        public string VolcanoSwitchColor { get; set; } = "Yellow";
+        public string VolcanoGateColor { get; set; } = "Red";
     }
 
     internal sealed class ModEntry : Mod
     {
         private ModConfig Config = null!;
-        private readonly Dictionary<Vector2, MineExitInfo> mineExits = new();
+        private readonly Dictionary<string, MineExitInfo> mineExits = new();
         private readonly List<KeyValuePair<Point, bool>> ladderQueue = new();
         private bool skippedFirstTick = false;
         private Texture2D? pixelTexture;
@@ -353,6 +374,79 @@ namespace ogahalo00.Stardew.LadderOutline
                 getValue: () => Config.PulseAnimation,
                 setValue: value => Config.PulseAnimation = value
             );
+
+            // === Volcano Dungeon Settings ===
+            api.AddSectionTitle(ModManifest, () => Helper.Translation.Get("config.section.volcano"));
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-enable.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-enable.tooltip"),
+                getValue: () => Config.EnableVolcano,
+                setValue: value => Config.EnableVolcano = value
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-show-exit.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-show-exit.tooltip"),
+                getValue: () => Config.ShowVolcanoExit,
+                setValue: value => Config.ShowVolcanoExit = value
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-show-switches.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-show-switches.tooltip"),
+                getValue: () => Config.ShowVolcanoSwitches,
+                setValue: value => Config.ShowVolcanoSwitches = value
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-show-gates.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-show-gates.tooltip"),
+                getValue: () => Config.ShowVolcanoGates,
+                setValue: value => Config.ShowVolcanoGates = value
+            );
+
+            api.AddBoolOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-hide-opened.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-hide-opened.tooltip"),
+                getValue: () => Config.HideOpenedSwitchesAndGates,
+                setValue: value => Config.HideOpenedSwitchesAndGates = value
+            );
+
+            api.AddTextOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-exit-color.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-exit-color.tooltip"),
+                getValue: () => Config.VolcanoExitColor,
+                setValue: value => Config.VolcanoExitColor = value,
+                allowedValues: AllowedColors,
+                formatAllowedValue: val => Helper.Translation.Get($"color.{val.ToLowerInvariant()}").Default(val)
+            );
+
+            api.AddTextOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-switch-color.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-switch-color.tooltip"),
+                getValue: () => Config.VolcanoSwitchColor,
+                setValue: value => Config.VolcanoSwitchColor = value,
+                allowedValues: AllowedColors,
+                formatAllowedValue: val => Helper.Translation.Get($"color.{val.ToLowerInvariant()}").Default(val)
+            );
+
+            api.AddTextOption(
+                mod: ModManifest,
+                name: () => Helper.Translation.Get("config.volcano-gate-color.name"),
+                tooltip: () => Helper.Translation.Get("config.volcano-gate-color.tooltip"),
+                getValue: () => Config.VolcanoGateColor,
+                setValue: value => Config.VolcanoGateColor = value,
+                allowedValues: AllowedColors,
+                formatAllowedValue: val => Helper.Translation.Get($"color.{val.ToLowerInvariant()}").Default(val)
+            );
         }
 
         private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -409,13 +503,21 @@ namespace ogahalo00.Stardew.LadderOutline
             {
                 foreach (GameLocation location in e.Added)
                 {
-                    if (!location.IsActiveLocation() || location is not MineShaft shaft)
+                    if (!location.IsActiveLocation())
                         continue;
 
-                    Monitor.Log($"Location added: Mine level {shaft.mineLevel}.", LogLevel.Trace);
-                    skippedFirstTick = false;
-                    FindLadders(shaft);
-                    RegisterDynamicLadders(shaft);
+                    if (location is MineShaft shaft)
+                    {
+                        Monitor.Log($"Location added: Mine level {shaft.mineLevel}.", LogLevel.Trace);
+                        skippedFirstTick = false;
+                        FindLadders(shaft);
+                        RegisterDynamicLadders(shaft);
+                    }
+                    else if (location is VolcanoDungeon volcano && Config.EnableVolcano)
+                    {
+                        Monitor.Log($"Location added: Volcano Dungeon level {volcano.level.Value}.", LogLevel.Trace);
+                        UpdateVolcanoTargets(volcano);
+                    }
                 }
             }
             catch (Exception ex)
@@ -472,6 +574,14 @@ namespace ogahalo00.Stardew.LadderOutline
                     FindLadders(shaft);
                     RegisterDynamicLadders(shaft);
                 }
+                else if (e.NewLocation is VolcanoDungeon volcano)
+                {
+                    if (Config.EnableVolcano)
+                    {
+                        Monitor.Log($"Warped to Volcano Dungeon level {volcano.level.Value}, scanning exits and gates.", LogLevel.Trace);
+                        UpdateVolcanoTargets(volcano);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -497,6 +607,23 @@ namespace ogahalo00.Stardew.LadderOutline
                     else if (e.IsMultipleOf(60))
                     {
                         FindLadders(shaft);
+                    }
+                }
+                else if (Game1.currentLocation is VolcanoDungeon volcano)
+                {
+                    if (Config.EnableVolcano)
+                    {
+                        // Check shortly after warp
+                        if (!hasCheckedInitialLadders && e.IsMultipleOf(30))
+                        {
+                            UpdateVolcanoTargets(volcano);
+                            hasCheckedInitialLadders = true;
+                        }
+                        // Check periodically (every 15 ticks) to immediately respond to button press / gate opening
+                        else if (e.IsMultipleOf(15))
+                        {
+                            UpdateVolcanoTargets(volcano);
+                        }
                     }
                 }
             }
@@ -530,9 +657,10 @@ namespace ogahalo00.Stardew.LadderOutline
                             if (tile.TileIndex == 173)
                             {
                                 var tilePos = new Vector2(x, y);
-                                if (!mineExits.TryGetValue(tilePos, out var existing) || existing.Type != MineExitType.Ladder)
+                                string key = $"ladder_{x}_{y}";
+                                if (!mineExits.TryGetValue(key, out var existing) || existing.Type != MineExitType.Ladder)
                                 {
-                                    mineExits[tilePos] = new MineExitInfo(tilePos, MineExitType.Ladder);
+                                    mineExits[key] = new MineExitInfo(tilePos, MineExitType.Ladder);
                                     ladderCount++;
                                     if (Config.DebugMode)
                                     {
@@ -544,9 +672,10 @@ namespace ogahalo00.Stardew.LadderOutline
                             else if (tile.TileIndex == 174)
                             {
                                 var tilePos = new Vector2(x, y);
-                                if (!mineExits.TryGetValue(tilePos, out var existing) || existing.Type != MineExitType.Shaft)
+                                string key = $"shaft_{x}_{y}";
+                                if (!mineExits.TryGetValue(key, out var existing) || existing.Type != MineExitType.Shaft)
                                 {
-                                    mineExits[tilePos] = new MineExitInfo(tilePos, MineExitType.Shaft);
+                                    mineExits[key] = new MineExitInfo(tilePos, MineExitType.Shaft);
                                     shaftCount++;
                                     if (Config.DebugMode)
                                     {
@@ -570,13 +699,123 @@ namespace ogahalo00.Stardew.LadderOutline
             }
         }
 
+        private void UpdateVolcanoTargets(VolcanoDungeon volcano)
+        {
+            if (!Config.EnableVolcano) return;
+
+            try
+            {
+                mineExits.Clear();
+
+                // 1. Exit doorway / stairs to the next floor
+                if (Config.ShowVolcanoExit && volcano.endPosition.HasValue)
+                {
+                    Vector2 exitTile = new Vector2(volcano.endPosition.Value.X, volcano.endPosition.Value.Y);
+                    string key = $"volcano_exit_{exitTile.X}_{exitTile.Y}";
+                    mineExits[key] = new MineExitInfo(
+                        exitTile,
+                        MineExitType.VolcanoExit,
+                        extraLabel: null,
+                        tileWidth: 1,
+                        tileHeight: 1
+                    );
+
+                    if (Config.DebugMode && !hasCheckedInitialLadders)
+                    {
+                        string msg = Helper.Translation.Get("hud.debug.volcano-exit-found", new { x = (int)exitTile.X, y = (int)exitTile.Y }).ToString();
+                        Game1.addHUDMessage(new HUDMessage(msg, HUDMessage.newQuest_type));
+                    }
+                }
+
+                // 2. Dwarf Gates & Floor Switches (Buttons)
+                if (volcano.dwarfGates != null)
+                {
+                    for (int g = 0; g < volcano.dwarfGates.Count; g++)
+                    {
+                        var gate = volcano.dwarfGates[g];
+                        if (gate == null) continue;
+
+                        bool isGateOpened = gate.opened.Value || gate.localOpened;
+
+                        // If gate is opened and user wants to hide opened targets, skip gate and its switches
+                        if (isGateOpened && Config.HideOpenedSwitchesAndGates)
+                            continue;
+
+                        // Locked Dwarf Gate
+                        if (Config.ShowVolcanoGates && !isGateOpened)
+                        {
+                            Vector2 gateTile = new Vector2(gate.tilePosition.X, gate.tilePosition.Y);
+                            string gateKey = $"volcano_gate_{g}_{gateTile.X}_{gateTile.Y}";
+                            mineExits[gateKey] = new MineExitInfo(
+                                gateTile,
+                                MineExitType.VolcanoGate,
+                                extraLabel: null,
+                                tileWidth: 1,
+                                tileHeight: 2
+                            );
+
+                            if (Config.DebugMode && !hasCheckedInitialLadders)
+                            {
+                                string msg = Helper.Translation.Get("hud.debug.volcano-gate-found", new { x = (int)gateTile.X, y = (int)gateTile.Y }).ToString();
+                                Game1.addHUDMessage(new HUDMessage(msg, HUDMessage.newQuest_type));
+                            }
+                        }
+
+                        // Switches / buttons on the floor
+                        if (Config.ShowVolcanoSwitches)
+                        {
+                            int totalSwitches = gate.switches.Count();
+                            int pressedCount = gate.pressedSwitches.Value;
+
+                            foreach (var pair in gate.switches.Pairs)
+                            {
+                                Point pt = pair.Key;
+                                bool isPressed = pair.Value || (gate.localSwitches.TryGetValue(pt, out bool localVal) && localVal);
+
+                                // If switch is already pressed and user wants to hide pressed buttons, skip
+                                if (isPressed && Config.HideOpenedSwitchesAndGates)
+                                    continue;
+
+                                // If gate opened and user hides opened targets, skip
+                                if (isGateOpened && Config.HideOpenedSwitchesAndGates)
+                                    continue;
+
+                                Vector2 switchTile = new Vector2(pt.X, pt.Y);
+                                string switchKey = $"volcano_switch_{g}_{pt.X}_{pt.Y}";
+                                string? note = totalSwitches > 1 ? $"({pressedCount}/{totalSwitches})" : null;
+
+                                mineExits[switchKey] = new MineExitInfo(
+                                    switchTile,
+                                    MineExitType.VolcanoSwitch,
+                                    extraLabel: note,
+                                    tileWidth: 1,
+                                    tileHeight: 1
+                                );
+
+                                if (Config.DebugMode && !hasCheckedInitialLadders)
+                                {
+                                    string msg = Helper.Translation.Get("hud.debug.volcano-switch-found", new { x = pt.X, y = pt.Y }).ToString();
+                                    Game1.addHUDMessage(new HUDMessage(msg, HUDMessage.newQuest_type));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Monitor.Log($"Error in UpdateVolcanoTargets: {ex.Message}\n{ex.StackTrace}", LogLevel.Error);
+            }
+        }
+
         private void OnLadderLocationAdded(Point point, bool shaft)
         {
             try
             {
                 var tilePos = new Vector2(point.X, point.Y);
                 var type = shaft ? MineExitType.Shaft : MineExitType.Ladder;
-                mineExits[tilePos] = new MineExitInfo(tilePos, type);
+                string key = shaft ? $"shaft_{point.X}_{point.Y}" : $"ladder_{point.X}_{point.Y}";
+                mineExits[key] = new MineExitInfo(tilePos, type);
 
                 Monitor.Log($"Added dynamic exit: {(shaft ? "Shaft" : "Ladder")} at tile {point}.", LogLevel.Trace);
                 if (Config.DebugMode)
@@ -600,7 +839,8 @@ namespace ogahalo00.Stardew.LadderOutline
             try
             {
                 // Player placed staircase is always a ladder
-                mineExits[point] = new MineExitInfo(point, MineExitType.Ladder);
+                string key = $"ladder_{(int)point.X}_{(int)point.Y}";
+                mineExits[key] = new MineExitInfo(point, MineExitType.Ladder);
                 Monitor.Log($"Added placed ladder at tile {point}.", LogLevel.Trace);
                 if (Config.DebugMode)
                 {
@@ -614,9 +854,62 @@ namespace ogahalo00.Stardew.LadderOutline
             }
         }
 
+        private bool IsSupportedLocation(GameLocation? loc)
+        {
+            if (loc is MineShaft) return true;
+            if (loc is VolcanoDungeon && Config.EnableVolcano) return true;
+            return false;
+        }
+
+        private Color GetOutlineColor(MineExitType type)
+        {
+            return type switch
+            {
+                MineExitType.Ladder => GetColor(Config.OutlineColor, Config.OutlineOpacity),
+                MineExitType.Shaft => GetColor(Config.ShaftOutlineColor, Config.OutlineOpacity),
+                MineExitType.VolcanoExit => GetColor(Config.VolcanoExitColor, Config.OutlineOpacity),
+                MineExitType.VolcanoSwitch => GetColor(Config.VolcanoSwitchColor, Config.OutlineOpacity),
+                MineExitType.VolcanoGate => GetColor(Config.VolcanoGateColor, Config.OutlineOpacity),
+                _ => GetColor(Config.OutlineColor, Config.OutlineOpacity)
+            };
+        }
+
+        private Color GetPointerColor(MineExitType type)
+        {
+            return type switch
+            {
+                MineExitType.Ladder => GetColor(Config.LadderPointerColor, 1.0f),
+                MineExitType.Shaft => GetColor(Config.ShaftPointerColor, 1.0f),
+                MineExitType.VolcanoExit => GetColor(Config.VolcanoExitColor, 1.0f),
+                MineExitType.VolcanoSwitch => GetColor(Config.VolcanoSwitchColor, 1.0f),
+                MineExitType.VolcanoGate => GetColor(Config.VolcanoGateColor, 1.0f),
+                _ => GetColor(Config.LadderPointerColor, 1.0f)
+            };
+        }
+
+        private string GetTargetLabel(MineExitType type, string? extraLabel)
+        {
+            string baseLabel = type switch
+            {
+                MineExitType.Ladder => Helper.Translation.Get("pointer.ladder").ToString(),
+                MineExitType.Shaft => Helper.Translation.Get("pointer.shaft").ToString(),
+                MineExitType.VolcanoExit => Helper.Translation.Get("pointer.volcano-exit").ToString(),
+                MineExitType.VolcanoSwitch => Helper.Translation.Get("pointer.volcano-switch").ToString(),
+                MineExitType.VolcanoGate => Helper.Translation.Get("pointer.volcano-gate").ToString(),
+                _ => ""
+            };
+
+            if (!string.IsNullOrEmpty(extraLabel))
+            {
+                return $"{baseLabel} {extraLabel}";
+            }
+
+            return baseLabel;
+        }
+
         private void OnRenderedWorld(object? sender, RenderedWorldEventArgs e)
         {
-            if (!Config.EnableMod || !Context.IsWorldReady || mineExits.Count == 0 || Game1.currentLocation is not MineShaft)
+            if (!Config.EnableMod || !Context.IsWorldReady || mineExits.Count == 0 || !IsSupportedLocation(Game1.currentLocation))
                 return;
 
             try
@@ -628,22 +921,19 @@ namespace ogahalo00.Stardew.LadderOutline
                     {
                         var rect = Game1.GlobalToLocal(
                             Game1.viewport,
-                            new Rectangle((int)exit.WorldPixel.X, (int)exit.WorldPixel.Y, Game1.tileSize, Game1.tileSize)
+                            new Rectangle((int)exit.WorldPixel.X, (int)exit.WorldPixel.Y, exit.TileWidth * Game1.tileSize, exit.TileHeight * Game1.tileSize)
                         );
 
                         // Culling
                         if (rect.Right < 0 || rect.Bottom < 0 || rect.Left > Game1.viewport.Width || rect.Top > Game1.viewport.Height)
                             continue;
 
-                        Color color = exit.Type == MineExitType.Ladder
-                            ? GetColor(Config.OutlineColor, Config.OutlineOpacity)
-                            : GetColor(Config.ShaftOutlineColor, Config.OutlineOpacity);
-
+                        Color color = GetOutlineColor(exit.Type);
                         DrawRectangle(e.SpriteBatch, rect, color, Config.OutlineThickness);
                     }
                 }
 
-                // 2. Draw On-Screen Floating Markers (bouncing arrow above ladder/hole when visible in world)
+                // 2. Draw On-Screen Floating Markers (bouncing arrow above targets when visible in world)
                 if (Config.EnablePointer && Config.ShowOnscreenMarker)
                 {
                     float bob = Config.PulseAnimation
@@ -663,9 +953,7 @@ namespace ogahalo00.Stardew.LadderOutline
                             continue;
 
                         Vector2 markerPos = new Vector2(centerScreen.X, centerScreen.Y - 48f + bob);
-                        Color color = exit.Type == MineExitType.Ladder
-                            ? GetColor(Config.LadderPointerColor, 1.0f)
-                            : GetColor(Config.ShaftPointerColor, 1.0f);
+                        Color color = GetPointerColor(exit.Type);
 
                         // Drop shadow
                         e.SpriteBatch.Draw(
@@ -692,10 +980,30 @@ namespace ogahalo00.Stardew.LadderOutline
                             SpriteEffects.None,
                             1f
                         );
+
+                        // Floating label above marker when ShowTargetType is true
+                        if (Config.ShowTargetType)
+                        {
+                            string label = GetTargetLabel(exit.Type, exit.ExtraLabel);
+                            if (!string.IsNullOrEmpty(label))
+                            {
+                                SpriteFont font = Game1.smallFont;
+                                Vector2 textSize = font.MeasureString(label);
+                                Vector2 textPos = new Vector2(markerPos.X - textSize.X / 2f, markerPos.Y - 26f);
+
+                                Utility.drawTextWithShadow(
+                                    e.SpriteBatch,
+                                    label,
+                                    font,
+                                    textPos,
+                                    color
+                                );
+                            }
+                        }
                     }
                 }
 
-                // 3. Draw Player Orbit Pointers (arrows around player pointing towards each ladder/shaft)
+                // 3. Draw Player Orbit Pointers (arrows around player pointing towards each target)
                 if (Config.EnablePointer && (Config.PointerStyle == "PlayerOrbit" || Config.PointerStyle == "Both") && Game1.player != null)
                 {
                     Vector2 playerCenter = new Vector2(Game1.player.Position.X + 32f, Game1.player.Position.Y + 32f);
@@ -718,9 +1026,7 @@ namespace ogahalo00.Stardew.LadderOutline
                         Vector2 orbitWorldPos = playerCenter + dir * (60f + pulse);
                         Vector2 orbitScreenPos = Game1.GlobalToLocal(Game1.viewport, orbitWorldPos);
 
-                        Color color = exit.Type == MineExitType.Ladder
-                            ? GetColor(Config.LadderPointerColor, 1.0f)
-                            : GetColor(Config.ShaftPointerColor, 1.0f);
+                        Color color = GetPointerColor(exit.Type);
 
                         // Shadow
                         e.SpriteBatch.Draw(
@@ -758,7 +1064,7 @@ namespace ogahalo00.Stardew.LadderOutline
 
         private void OnRenderedHud(object? sender, RenderedHudEventArgs e)
         {
-            if (!Config.EnableMod || !Config.EnablePointer || !Context.IsWorldReady || mineExits.Count == 0 || Game1.currentLocation is not MineShaft || Game1.player == null)
+            if (!Config.EnableMod || !Config.EnablePointer || !Context.IsWorldReady || mineExits.Count == 0 || !IsSupportedLocation(Game1.currentLocation) || Game1.player == null)
                 return;
 
             // Only draw screen-edge pointers if style is ScreenEdge or Both
@@ -806,9 +1112,7 @@ namespace ogahalo00.Stardew.LadderOutline
                     float angle = (float)Math.Atan2(dir.Y, dir.X);
                     float spriteRotation = angle + (float)(Math.PI / 2.0);
 
-                    Color color = exit.Type == MineExitType.Ladder
-                        ? GetColor(Config.LadderPointerColor, 1.0f)
-                        : GetColor(Config.ShaftPointerColor, 1.0f);
+                    Color color = GetPointerColor(exit.Type);
 
                     pointersToDraw.Add(new PointerDrawInfo
                     {
@@ -817,6 +1121,7 @@ namespace ogahalo00.Stardew.LadderOutline
                         Rotation = spriteRotation,
                         Color = color,
                         Type = exit.Type,
+                        ExtraLabel = exit.ExtraLabel,
                         DistanceTiles = distTiles
                     });
                 }
@@ -884,9 +1189,7 @@ namespace ogahalo00.Stardew.LadderOutline
                     string label = "";
                     if (Config.ShowTargetType)
                     {
-                        label = p.Type == MineExitType.Ladder
-                            ? Helper.Translation.Get("pointer.ladder").ToString()
-                            : Helper.Translation.Get("pointer.shaft").ToString();
+                        label = GetTargetLabel(p.Type, p.ExtraLabel);
                     }
                     if (Config.ShowDistance)
                     {

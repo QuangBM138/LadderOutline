@@ -1,29 +1,36 @@
 {
   "pointer.ladder": "Ladder",
   "pointer.shaft": "Hole",
+  "pointer.volcano-exit": "Next Floor",
+  "pointer.volcano-switch": "Gate Switch",
+  "pointer.volcano-gate": "Locked Gate",
 
-  "hud.toggled-enabled": "Ladder Outline & Pointer enabled.",
-  "hud.toggled-disabled": "Ladder Outline & Pointer disabled.",
+  "hud.toggled-enabled": "Ladder & Volcano Outline enabled.",
+  "hud.toggled-disabled": "Ladder & Volcano Outline disabled.",
   "hud.debug.ladder-found": "Ladder at {{x}},{{y}}",
   "hud.debug.shaft-found": "Shaft (hole) at {{x}},{{y}}!",
   "hud.debug.new-exit": "New {{type}} at {{x}},{{y}}!",
   "hud.debug.placed-ladder": "Placed Ladder at {{x}},{{y}}!",
+  "hud.debug.volcano-exit-found": "Volcano exit at {{x}},{{y}}",
+  "hud.debug.volcano-switch-found": "Gate switch at {{x}},{{y}}",
+  "hud.debug.volcano-gate-found": "Locked gate at {{x}},{{y}}",
 
   "config.section.general": "General Settings",
   "config.section.outline": "Outline Settings",
   "config.section.pointer": "Direction Pointer Settings",
+  "config.section.volcano": "Volcano Dungeon Settings",
 
   "config.enable-mod.name": "Enable Mod",
-  "config.enable-mod.tooltip": "Master switch to enable or disable LadderOutline features.",
+  "config.enable-mod.tooltip": "Master switch to enable or disable mod features.",
 
   "config.toggle-key.name": "Toggle Key",
   "config.toggle-key.tooltip": "Key to quickly toggle the mod on or off. Set to 'None' to disable.",
 
   "config.debug-mode.name": "Debug Mode",
-  "config.debug-mode.tooltip": "Show debug log messages and notifications when ladders or shafts are detected.",
+  "config.debug-mode.tooltip": "Show debug log messages and notifications when targets are detected.",
 
   "config.enable-outline.name": "Enable Outline",
-  "config.enable-outline.tooltip": "Draw visual outline borders around ladder and shaft tiles.",
+  "config.enable-outline.tooltip": "Draw visual outline borders around target tiles.",
 
   "config.outline-color.name": "Ladder Outline Color",
   "config.outline-color.tooltip": "Color of the outline around ladders.",
@@ -38,22 +45,22 @@
   "config.outline-thickness.tooltip": "Thickness of the outline border in pixels (1 to 6).",
 
   "config.enable-pointer.name": "Enable Pointer",
-  "config.enable-pointer.tooltip": "Show directional pointers pointing toward ladders and shafts (supports multiple targets).",
+  "config.enable-pointer.tooltip": "Show directional pointers pointing toward targets (supports multiple targets).",
 
   "config.pointer-style.name": "Pointer Style",
   "config.pointer-style.tooltip": "Display style for pointers: ScreenEdge (at screen borders), PlayerOrbit (around farmer), or Both.",
 
   "config.show-offscreen-only.name": "Show Off-screen Only",
-  "config.show-offscreen-only.tooltip": "Only show screen-edge pointers when the ladder or shaft is outside the visible screen.",
+  "config.show-offscreen-only.tooltip": "Only show screen-edge pointers when the target is outside the visible screen.",
 
   "config.show-onscreen-marker.name": "Show On-screen Marker",
-  "config.show-onscreen-marker.tooltip": "Show a floating arrow bouncing above ladders/shafts when they are visible on-screen.",
+  "config.show-onscreen-marker.tooltip": "Show a floating arrow bouncing above targets when they are visible on-screen.",
 
   "config.show-distance.name": "Show Distance",
   "config.show-distance.tooltip": "Display the distance in tiles/meters next to the pointer.",
 
   "config.show-target-type.name": "Show Target Type",
-  "config.show-target-type.tooltip": "Display 'Ladder' or 'Hole' label next to the pointer.",
+  "config.show-target-type.tooltip": "Display target label (e.g., 'Ladder', 'Next Floor', 'Gate Switch') next to the pointer.",
 
   "config.ladder-pointer-color.name": "Ladder Pointer Color",
   "config.ladder-pointer-color.tooltip": "Color of pointers pointing to ladders.",
@@ -66,6 +73,30 @@
 
   "config.pulse-animation.name": "Pulse Animation",
   "config.pulse-animation.tooltip": "Animate pointers with a smooth pulse/bobbing effect to make them easily noticeable.",
+
+  "config.volcano-enable.name": "Enable Volcano Support",
+  "config.volcano-enable.tooltip": "Enable directional pointers and outlines inside Ginger Island's Volcano Dungeon.",
+
+  "config.volcano-show-exit.name": "Show Next Floor Exit",
+  "config.volcano-show-exit.tooltip": "Show pointer and outline pointing towards the exit doorway / stairs leading to the next floor.",
+
+  "config.volcano-show-switches.name": "Show Gate Switches (Buttons)",
+  "config.volcano-show-switches.tooltip": "Show pointers and outlines pointing towards floor buttons needed to unlock dwarf gates.",
+
+  "config.volcano-show-gates.name": "Show Locked Dwarf Gates",
+  "config.volcano-show-gates.tooltip": "Show pointer and outline pointing towards locked dwarf gates.",
+
+  "config.volcano-hide-opened.name": "Hide Completed Targets",
+  "config.volcano-hide-opened.tooltip": "Hide switches after they are pressed and gates once unlocked to keep the screen uncluttered.",
+
+  "config.volcano-exit-color.name": "Volcano Exit Color",
+  "config.volcano-exit-color.tooltip": "Color of pointer and outline for the next floor exit.",
+
+  "config.volcano-switch-color.name": "Gate Switch Color",
+  "config.volcano-switch-color.tooltip": "Color of pointer and outline for floor buttons (switches).",
+
+  "config.volcano-gate-color.name": "Locked Gate Color",
+  "config.volcano-gate-color.tooltip": "Color of pointer and outline for locked dwarf gates.",
 
   "pointer-style.screenedge": "Screen Edge",
   "pointer-style.playerorbit": "Around Player",

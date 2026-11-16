@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v6.0": {
-      "LadderOutline/1.1.0": {
+      "LadderOutline/1.2.0": {
         "dependencies": {
           "Pathoschild.Stardew.ModBuildConfig": "4.4.0"
         },
@@ -18,7 +18,7 @@
     }
   },
   "libraries": {
-    "LadderOutline/1.1.0": {
+    "LadderOutline/1.2.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
